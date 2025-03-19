@@ -4,3 +4,4 @@
 /backend/app.log
 /backend/train
 /backend/models/clip_model_quantized.onnx
+/backend/routes/__pycache__
