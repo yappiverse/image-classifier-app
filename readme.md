@@ -19,7 +19,9 @@ image-classifier-app/
 │   ├── routes/            # API endpoints
 │   ├── utils/             # Utility functions
 │   ├── main.py            # Backend entry point
-│   └── requirements.txt   # Python dependencies
+│   ├── requirements.txt   # Python dependencies
+│   └── readme.md          # Backend documentation
+|
 ├── frontend/              # Electron frontend
 │   └── readme.md          # Frontend documentation
 └── readme.md              # This file
