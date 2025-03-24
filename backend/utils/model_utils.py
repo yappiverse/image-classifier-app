@@ -1,4 +1,5 @@
 import os
+import threading
 import onnxruntime as ort
 from transformers import CLIPProcessor
 
@@ -6,10 +7,11 @@ from transformers import CLIPProcessor
 ort_session = None
 processor = None
 
+MODEL_STATUS = {"loaded": False}
 # File paths
 MODEL_PATH = "models/clip_model_quantized.onnx"
 SPLIT_PREFIX = "models/clip_model_part_"
-CHUNK_SIZE = 90 * 1024 * 1024  # 90MB
+CHUNK_SIZE = 90 * 1024 * 1024
 
 
 def split_model():
@@ -23,7 +25,7 @@ def split_model():
             with open(f"{SPLIT_PREFIX}{index}.part", "wb") as chunk_file:
                 chunk_file.write(chunk)
             index += 1
-    print(f"Model split into {index} parts.")
+    print(f"✅ Model split into {index} parts.")
 
 
 def combine_model():
@@ -34,20 +36,43 @@ def combine_model():
             with open(f"{SPLIT_PREFIX}{index}.part", "rb") as chunk_file:
                 f.write(chunk_file.read())
             index += 1
-    print(f"Model reassembled from {index} parts.")
+    print(f"✅ Model reassembled from {index} parts.")
 
 
-def load_model():
-    """Loads the ONNX model and CLIP processor at startup."""
+def load_model_in_background():
+    """Loads the ONNX model and CLIP processor in a separate thread."""
     global ort_session, processor
-    if ort_session is None:
+    try:
+        print("🚀 Loading ONNX model in background...")
+
+        if not os.path.exists(MODEL_PATH):
+            split_files = [f for f in os.listdir("models") if f.startswith(os.path.basename(SPLIT_PREFIX))]
+
+            if split_files:
+                print("🛠️ Detected split model parts. Reassembling...")
+                combine_model()
+            else:
+                print(f"❌ ERROR: Model file '{MODEL_PATH}' is missing and no split parts found.")
+                return
+
         ort_session = ort.InferenceSession(MODEL_PATH)
-    if processor is None:
         processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        MODEL_STATUS["loaded"] = True
+
+        print("✅ Model loaded successfully!")
+
+    except Exception as e:
+        print(f"⚠️ Model loading failed: {e}")
+
+
+
+def start_model_loading():
+    """Starts the model loading in a separate thread to prevent blocking startup."""
+    threading.Thread(target=load_model_in_background, daemon=True).start()
 
 
 def get_model():
     """Returns the loaded ONNX model and processor."""
     if ort_session is None or processor is None:
-        load_model()
+        load_model_in_background()
     return ort_session, processor

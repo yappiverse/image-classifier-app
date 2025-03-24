@@ -2,6 +2,7 @@ from fastapi import APIRouter, Query, HTTPException
 from pathlib import Path
 from routes.uploads import UPLOADED_FILES
 from utils.logging_utils import log_event
+from utils.model_utils import MODEL_STATUS
 
 router = APIRouter()
 
@@ -19,3 +20,8 @@ def get_uploaded_files():
     log_event(f"📂 Returning {len(UPLOADED_FILES)} uploaded images.")
 
     return {"total_files": len(UPLOADED_FILES), "files": UPLOADED_FILES}
+
+@router.get("/model-status")
+def get_model_status():
+    """Returns whether the model is fully loaded."""
+    return {"model_loaded": MODEL_STATUS["loaded"]}
