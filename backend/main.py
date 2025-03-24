@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from routes import classify, labels, logs, uploads, health, files
 from utils.model_utils import MODEL_PATH, SPLIT_PREFIX, combine_model, load_model
+from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -32,6 +33,15 @@ async def lifespan(app: FastAPI):
 
 # Initialize FastAPI with lifespan
 app = FastAPI(title="CLIP Image Classifier API", lifespan=lifespan)
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Register routes
 app.include_router(uploads.router)
